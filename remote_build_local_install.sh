@@ -90,16 +90,22 @@ echo -e "\033[31mRyanBuildLog:   --->   执行远程编译: clean == $clean \033
 ssh -t -p 22 $ssh_path "$build_code"
 echo -e "\033[31mRyanBuildLog:   --->   执行远程编译完成 \n \033[0m"
 
+md5sum_code="md5sum ${output_apk_parent_path}/${apk_name}"
+md5_result=$(ssh -t -p 22 $ssh_path "$md5sum_code")
+echo -e "\033[31mRyanBuildLog:   --->   build output apk hash: ${md5_result} \n \033[0m"
+
 echo -e "\033[31mRyanBuildLog:   --->   copy apk 到本地 \n \033[0m"
 scp_code="${ssh_path}:${output_apk_parent_path}/${apk_name}"
 
 scp -P 22 $scp_code ./
 
 if [[ "$install" == 1 ]]; then
+  local_apk_path="./${apk_name}"
+  echo -e "\033[31mRyanBuildLog:   --->   下载到本地的apk hash: $(md5 ${local_apk_path}) \n \033[0m"
   echo -e "\033[31mRyanBuildLog:   --->   kill掉指定进程： ${pkg_name} \n \033[0m"
   adb shell am force-stop ${pkg_name}
   echo -e "\033[31mRyanBuildLog:   --->   adb install : ${apk_name} \n \033[0m"
-  adb install -r "./${apk_name}"
+  adb install -r ${local_apk_path}
   echo $am_start
   if [[ "$am_start" != "" ]]; then
     adb shell am start -n "${am_start}" -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
